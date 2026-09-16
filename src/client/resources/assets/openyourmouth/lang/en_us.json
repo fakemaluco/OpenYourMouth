@@ -1,5 +1,8 @@
 {
   "addon.openyourmouth.name": "OpenYourMouth TTS",
+  "gui.openyourmouth.chat_button.tts": "TTS",
+  "gui.openyourmouth.chat_button.send": "CHAT",
+  "gui.openyourmouth.chat_button.hear": "HEAR",
   "gui.openyourmouth.settings.title": "OpenYourMouth — Text to Speech",
   "gui.openyourmouth.settings": "TTS settings",
   "gui.openyourmouth.open_settings": "Open settings…",

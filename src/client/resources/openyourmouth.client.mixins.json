@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_${javaVersion}",
   "plugin": "dev.openyourmouth.mixin.OpenYourMouthMixinPlugin",
   "client": [
+    "ChatScreenMixin",
     "simple.SimpleVoiceChatScreenMixin",
     "simple.SimpleMicThreadMixin",
     "plasmo.PlasmoActivationMixin",
