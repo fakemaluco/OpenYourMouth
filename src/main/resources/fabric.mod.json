@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "openyourmouth",
+  "version": "${version}",
+  "name": "OpenYourMouth",
+  "description": "Turns outgoing Minecraft chat messages into voice chat TTS.",
+  "authors": ["OpenYourMouth contributors"],
+  "contributors": ["Fakiz_"],
+  "icon": "icon.png",
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.openyourmouth.OpenYourMouthClient"],
+    "voicechat": ["dev.openyourmouth.integration.simple.OpenYourMouthSimplePlugin"]
+  },
+  "mixins": [
+    { "config": "openyourmouth.client.mixins.json", "environment": "client" }
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "=${minecraftVersion}",
+    "java": ">=${javaVersion}",
+    "fabric-api": ">=${fabricApiVersion}"
+  },
+  "suggests": {
+    "voicechat": "*",
+    "plasmovoice": "*"
+  }
+}

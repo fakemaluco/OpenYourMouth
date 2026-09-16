@@ -1,0 +1,138 @@
+plugins {
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
+    id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
+    id 'maven-publish'
+}
+
+def targetMinecraft = providers.gradleProperty('targetMinecraft').orElse(project.minecraft_version).get()
+if (!(targetMinecraft in ['1.21.11', '26.2'])) {
+    throw new GradleException("Unsupported Minecraft version: ${targetMinecraft}")
+}
+def modernMinecraft = targetMinecraft == '26.2'
+apply plugin: modernMinecraft ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-loom-remap'
+def minecraftVersion = targetMinecraft
+def fabricApiVersion = modernMinecraft ? '0.160.0+26.2' : project.fabric_api_version
+def simpleVoiceChatVersion = modernMinecraft ? 'fabric-2.6.23+26.2' : project.simple_voice_chat_version
+def plasmoVoiceVersion = modernMinecraft ? 'fabric-26.2-2.1.17' : project.plasmo_voice_version
+def javaVersion = modernMinecraft ? 25 : 21
+
+version = "${project.mod_version}+mc${minecraftVersion}"
+group = project.maven_group
+
+base { archivesName = project.archives_base_name }
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.maxhenkel.de/repository/public' }
+    maven { url = 'https://repo.plasmoverse.com/releases' }
+    exclusiveContent {
+        forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        openyourmouth {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+    runs {
+        simpleVoiceChat {
+            client()
+            name = 'Simple Voice Chat Client'
+            configName = 'simpleVoiceChat'
+            runDir = 'run/simple'
+        }
+        plasmoVoice {
+            client()
+            name = 'Plasmo Voice Client'
+            configName = 'plasmoVoice'
+            runDir = 'run/plasmo'
+        }
+    }
+}
+
+if (modernMinecraft) {
+    sourceSets.client.java.setSrcDirs(['src/modern/java'])
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraftVersion}"
+    if (!modernMinecraft) {
+        mappings loom.officialMojangMappings()
+    }
+    if (modernMinecraft) {
+        implementation "net.fabricmc:fabric-loader:${loader_version}"
+        implementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
+    } else {
+        modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+        modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
+    }
+
+    if (modernMinecraft) {
+        compileOnly "maven.modrinth:simple-voice-chat:${simpleVoiceChatVersion}"
+        compileOnly "maven.modrinth:plasmo-voice:${plasmoVoiceVersion}"
+    } else {
+        modCompileOnly "maven.modrinth:simple-voice-chat:${simpleVoiceChatVersion}"
+        modCompileOnly "maven.modrinth:plasmo-voice:${plasmoVoiceVersion}"
+    }
+
+    // Loom must remap optional mods before they enter a named development runtime.
+    // Select exactly one with -PvoicechatTest=simple or -PvoicechatTest=plasmo.
+    if (providers.gradleProperty('voicechatTest').orNull == 'simple') {
+        if (modernMinecraft) {
+            runtimeOnly "maven.modrinth:simple-voice-chat:${simpleVoiceChatVersion}"
+        } else {
+            modLocalRuntime "maven.modrinth:simple-voice-chat:${simpleVoiceChatVersion}"
+        }
+    }
+    if (providers.gradleProperty('voicechatTest').orNull == 'plasmo') {
+        if (modernMinecraft) {
+            runtimeOnly "maven.modrinth:plasmo-voice:${plasmoVoiceVersion}"
+        } else {
+            modLocalRuntime "maven.modrinth:plasmo-voice:${plasmoVoiceVersion}"
+        }
+    }
+
+    implementation include('javazoom:jlayer:1.0.1')
+
+    testImplementation platform('org.junit:junit-bom:5.13.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'minecraftVersion', minecraftVersion
+    inputs.property 'javaVersion', javaVersion
+    inputs.property 'fabricApiVersion', fabricApiVersion
+    filesMatching('fabric.mod.json') {
+        expand version: inputs.properties.version,
+               minecraftVersion: minecraftVersion,
+               javaVersion: javaVersion,
+               fabricApiVersion: fabricApiVersion.split('\\+')[0]
+    }
+}
+
+processClientResources {
+    inputs.property 'javaVersion', javaVersion
+    filesMatching('openyourmouth.client.mixins.json') {
+        expand javaVersion: javaVersion
+    }
+}
+
+tasks.withType(JavaCompile).configureEach { options.release = javaVersion }
+tasks.withType(Test).configureEach { useJUnitPlatform() }
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.toVersion(javaVersion)
+    targetCompatibility = JavaVersion.toVersion(javaVersion)
+}
+
+jar {
+    from('LICENSE') { rename { "${it}_${project.base.archivesName.get()}" } }
+}

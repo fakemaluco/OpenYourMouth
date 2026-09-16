@@ -1,0 +1,16 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "dev.openyourmouth.mixin",
+  "compatibilityLevel": "JAVA_${javaVersion}",
+  "plugin": "dev.openyourmouth.mixin.OpenYourMouthMixinPlugin",
+  "client": [
+    "simple.SimpleVoiceChatScreenMixin",
+    "simple.SimpleMicThreadMixin",
+    "plasmo.PlasmoActivationMixin",
+    "plasmo.PlasmoCaptureMixin",
+    "plasmo.PlasmoAddonsTabMixin",
+    "plasmo.PlasmoVoiceSettingsScreenMixin"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}
